@@ -81,7 +81,7 @@ class absa_english_text():
     def __init__(self, text:str) -> None:
         self.TEXT = text
 
-    def teencode(self, path='teencode.txt') -> pd.DataFrame:
+    def teencode(self, path='data_teencode.txt') -> pd.DataFrame:
         df = pd.read_csv(path, delimiter='\t', header = None, names = ['teencode', 'meaning'])
         return df
 
