@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings('ignore')
+
 import pandas as pd
 import requests
 import json
@@ -76,14 +79,15 @@ class data_scraping():
         df = pd.DataFrame(data_list)
         return df
 
+def teencode(path='https://raw.githubusercontent.com/dinhgiangltk/stored_data/main/text_data/teencode.txt') -> pd.DataFrame:
+    df = pd.read_csv(path, delimiter='\t', header = None, names = ['teencode', 'meaning'])
+    return df
+
+TEENCODE = teencode()
 
 class absa_english_text():
     def __init__(self, text:str) -> None:
         self.TEXT = text
-
-    def teencode(self, path='data_teencode.txt') -> pd.DataFrame:
-        df = pd.read_csv(path, delimiter='\t', header = None, names = ['teencode', 'meaning'])
-        return df
 
     def teencode_replace(self, text:str = None, n=3):
         if text == None:
@@ -93,7 +97,7 @@ class absa_english_text():
         for i, it in enumerate(iters):                                               
             next(itertools.islice(it, i, i), None)                                               
         
-        teencode = self.teencode()
+        teencode = TEENCODE
         result = map(lambda x: (' '.join(x), teencode[teencode.teencode==' '.join(x)].meaning.iloc[0]),
                     filter(lambda gr: None not in gr and ' '.join(gr) in list(teencode.teencode), itertools.zip_longest(*iters))
                     )
@@ -104,6 +108,15 @@ class absa_english_text():
             text = self.TEXT
         _trim = re.sub(' +', ' ', text)
         return _trim
+
+    def truncate_first_words(self, text:str = None, separator=' ', threshold=400):
+        if text == None:
+            text = self.TEXT
+
+        if len(text) <= threshold:
+            return text
+        else:
+            return text[:threshold].rsplit(separator, maxsplit=1)[0]
 
     def words_tokenized(self, text:str = None):
         if text == None:
