@@ -8,11 +8,33 @@ import itertools
 import regex as re
 from googletrans import Translator
 import aspect_based_sentiment_analysis as absa
-import spacy
+
+from nltk import word_tokenize, pos_tag
+from nltk.corpus import wordnet
+from nltk import RegexpParser
+from nltk import Tree
+import pandas as pd
+
+# Defining a grammar & Parser
+NP = "NP: {(<V\w+>|<NN\w?>)+.*<NN\w?>}"
+chunker = RegexpParser(NP)
 
 recognizer = absa.aux_models.BasicPatternRecognizer()
 nlp_absa = absa.load(pattern_recognizer=recognizer)
-nlp_lg = spacy.load('en_core_web_lg')
+
+def classify_noun(word):
+    synsets = wordnet.synsets(word)
+    
+    if not synsets:
+        return "Unknown"
+    
+    synset = synsets[0]
+    if synset.pos() == "n":
+        return "Concrete noun"
+    elif synset.pos() == "s":
+        return "Abstract noun"
+    else:
+        return "Unknown"
 
 class data_scraping():
     def __init__(self, url_hotel:str, max_reviews = 1000, reviews_per_page = 10) -> None:
@@ -79,7 +101,7 @@ class data_scraping():
         df = pd.DataFrame(data_list)
         return df
 
-def teencode(path='https://raw.githubusercontent.com/dinhgiangltk/stored_data/main/text_data/teencode.txt') -> pd.DataFrame:
+def teencode(path='data_teencode.txt') -> pd.DataFrame:
     df = pd.read_csv(path, delimiter='\t', header = None, names = ['teencode', 'meaning'])
     return df
 
@@ -103,12 +125,6 @@ class absa_english_text():
                     )
         return dict(result)
 
-    def trim_text(self, text:str = None):
-        if text == None:
-            text = self.TEXT
-        _trim = re.sub(' +', ' ', text)
-        return _trim
-
     def truncate_first_words(self, text:str = None, separator=' ', threshold=400):
         if text == None:
             text = self.TEXT
@@ -118,21 +134,27 @@ class absa_english_text():
         else:
             return text[:threshold].rsplit(separator, maxsplit=1)[0]
 
-    def words_tokenized(self, text:str = None):
+    def words_tokenized(self, text:str = None, teencode_replaced=True):
         if text == None:
             text = self.TEXT
-        _lowercase = ''
+        
+        tokenized = ''
         if text != None and text != float('nan'):
-            _newline = re.sub('\n', '. ', text)
-            _sub_re = re.sub('[^\p{L}0-9.,() ]', '', _newline)
-            _trim = self.trim_text(_sub_re)
-            _lowercase = _trim.lower()
+            tokenized = text
+            tokenized = re.sub('\n', '. ', tokenized) # remove new lines
+            tokenized = re.sub('[^\p{L}0-9.,() ]', '', tokenized) # remove not ascii characters
+            tokenized = re.sub(r'(?<=[.,])(?=[^\s])', r' ', tokenized) # add space after dot or comma
+            tokenized = re.sub(' +', ' ', tokenized) # remove consecutive spaces
+
+        if teencode_replaced:
+            tokenized = tokenized.lower()
             for n in [3,2,1]:
-                teencodes_meanings = self.teencode_replace(_lowercase, n)
+                teencodes_meanings = self.teencode_replace(tokenized, n)
                 teencodes = teencodes_meanings.keys()
                 for teencode in teencodes:
-                    _lowercase = _lowercase.replace(teencode, teencodes_meanings[teencode])
-        return _lowercase
+                    tokenized = tokenized.replace(teencode, teencodes_meanings[teencode])
+                    
+        return tokenized
 
     def translate_vi_to_en(self, text:str = None):
         if text == None:
@@ -151,16 +173,34 @@ class absa_english_text():
                 ls.append(item)
         return ls
 
-    def nouns_extraction(self, text = None):
+    def nouns_extraction(self, text:str = None, chunk_func=chunker.parse):
         if text == None:
             text = self.TEXT
 
-        if isinstance(text, str):
-            doc = nlp_lg(text)
-            nps = [token.lemma_ for token in doc if token.pos_ == 'NOUN']
-            return self.unique_list(nps)
-        else:
-            return []
+        chunked = chunk_func(pos_tag(word_tokenize(text)))
+        continuous_chunk = []
+        current_chunk = []
+        text_np_removed = text
+
+        for subtree in chunked:
+            if type(subtree) == Tree:
+                current_chunk.append(" ".join([token for token, _ in subtree.leaves()]))
+            elif current_chunk:
+                named_entity = " ".join(current_chunk)
+                if named_entity not in continuous_chunk:
+                    continuous_chunk.append(named_entity)
+                    text_np_removed = text_np_removed.replace(named_entity, '')
+                    current_chunk = []
+            else:
+                continue
+
+        chunks = pos_tag(word_tokenize(text_np_removed))
+        for token, pos in chunks:
+            if pos in ('NN','NNS'):
+                if token not in continuous_chunk:
+                    continuous_chunk.append(token)
+        
+        return continuous_chunk
 
     def absa_by_np(self, text = None):
         if text == None:
