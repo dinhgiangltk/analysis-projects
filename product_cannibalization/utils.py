@@ -7,14 +7,12 @@ from causalimpact import CausalImpact
 
 fcn_compare = lambda a,b: abs(a-b)/max(a,b)
 
-def decompose_signal(input_signal:pd.Series, period_in_days=14, minimum_heartbeat=0.85) -> pd.DataFrame:
+def decompose_signal(input_signal:pd.Series, period_in_days=14) -> pd.DataFrame:
     """
     Season-Trend decomposition using LOESS.
     """
     sales_decomposition_LOESS = STL(input_signal, period=period_in_days).fit()
-    seasonality_flag = sales_decomposition_LOESS.trend > minimum_heartbeat
     df = pd.DataFrame({
-        'heartbeat_flag': seasonality_flag,
         'trend': sales_decomposition_LOESS.trend,
         'seasonal': sales_decomposition_LOESS.seasonal,
         'residual': sales_decomposition_LOESS.resid
