@@ -101,7 +101,7 @@ class data_scraping():
         df = pd.DataFrame(data_list)
         return df
 
-def teencode(path='data_teencode.txt') -> pd.DataFrame:
+def teencode(path='./data/teencode.txt') -> pd.DataFrame:
     df = pd.read_csv(path, delimiter='\t', header = None, names = ['teencode', 'meaning'])
     return df
 
