@@ -36,14 +36,15 @@ class GeneticAlgorithm:
         """
         population_size = pop.size
         crossover_pop = Population(size=0)
-        initialize_schedules = sorted(pop.get_schedules(), key=lambda x: x.get_fitness(), reverse=True)
-        for i in range(elitism):
-            crossover_pop.get_schedules().append(initialize_schedules[i])
+        for _ in range(elitism):
+            elite_schedule = pop.get_schedules()[0]
+            crossover_pop.get_schedules().append(elite_schedule)
 
         for _ in range(elitism, population_size):
             schedule1 = self.select_tournament_population(pop).get_schedules()[0]
             schedule2 = self.select_tournament_population(pop).get_schedules()[0]
-            crossover_pop.get_schedules().append(self.crossover_schedule(schedule1, schedule2))
+            crossover_schedule = self.crossover_schedule(schedule1, schedule2)
+            crossover_pop.get_schedules().append(crossover_schedule)
             
         return crossover_pop
     
@@ -69,10 +70,10 @@ class GeneticAlgorithm:
             The number of individuals selected from population
         """
         tournament_pop = Population(0)
-        initialize_schedules = rnd.choices(pop.get_schedules(), k=size)
+        tournament_schedules = rnd.choices(pop.get_schedules(), k=size)
         
         for i in range(size):
-            tournament_pop.get_schedules().append(initialize_schedules[i])
+            tournament_pop.get_schedules().append(tournament_schedules[i])
 
         tournament_pop.get_schedules().sort(key=lambda x: x.get_fitness(), reverse=True)
         return tournament_pop

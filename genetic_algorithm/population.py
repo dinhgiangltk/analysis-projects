@@ -29,14 +29,15 @@ class Schedule:
         self.arrangement = []
         self.totalShifts = len(SHIFTS)
         self.numbOfConflicts = 0
-        self.conflicts = []
+        self.numbOfConflicts1 = 0
+        self.numbOfConflicts2 = 0
         self.fitness = -1
         self.isFitnessChanged = True
     def get_arrangement(self):
         self.isFitnessChanged = True
         return self.arrangement
     def get_numbOfConflicts(self): return self.numbOfConflicts
-    def get_conflicts(self): return self.conflicts
+    def get_conflicts(self): return [self.numbOfConflicts1, self.numbOfConflicts2]
     def get_fitness(self):
         if self.isFitnessChanged == True:
             self.fitness = self.calculate_fitness()
@@ -77,7 +78,7 @@ class Schedule:
         # check whether all shifts are always observed by managers
         df_managers = df[df['JobTitleName'].isin(['Manager','Leader'])]
         numbOfShiftsWithManager = df_managers['shiftName'].nunique()
-        self.conflicts.append(self.totalShifts - numbOfShiftsWithManager)
+        self.numbOfConflicts1 = self.totalShifts - numbOfShiftsWithManager
 
         # check whether each employee has exactly `NUMB_SHIFTS_PER_EMPLOYEE` shifts in month    
         numbOfEmpsNotExactShifts = (
@@ -86,10 +87,10 @@ class Schedule:
             .agg(numbShifts=('shiftName','nunique'))
             .query(f"numbShifts < {NUMB_SHIFTS_PER_EMPLOYEE} or numbShifts > {DATES}").shape[0]
         )
-        self.conflicts.append(numbOfEmpsNotExactShifts)
+        self.numbOfConflicts2 = numbOfEmpsNotExactShifts
         
         # sum of numbOfConflict components
-        self.numbOfConflicts = sum(self.conflicts)
+        self.numbOfConflicts = self.numbOfConflicts1 + self.numbOfConflicts2
 
         return 1 / (self.get_numbOfConflicts() + 1)
 
@@ -107,4 +108,5 @@ class Population:
         self.schedules = []
         for _ in range(0, size):
             self.schedules.append(Schedule().initialize())
+        self.schedules.sort(key=lambda x: x.get_fitness(), reverse=True)
     def get_schedules(self): return self.schedules
