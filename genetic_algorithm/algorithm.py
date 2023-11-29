@@ -36,8 +36,8 @@ class GeneticAlgorithm:
         """
         population_size = pop.size
         crossover_pop = Population(size=0)
+        initialize_schedules = sorted(pop.get_schedules(), key=lambda x: x.get_fitness(), reverse=True)
         for i in range(elitism):
-            initialize_schedules = sorted(pop.get_schedules(), key=lambda x: x.get_fitness(), reverse=True)
             crossover_pop.get_schedules().append(initialize_schedules[i])
 
         for _ in range(elitism, population_size):

@@ -9,13 +9,13 @@ from data import (
     DATES
 )
 POPULATION_SIZE = 10
+DATA = Data()
+SHIFTS = DATA.get_shifts()
+EMPLOYEES = DATA.get_employees()
 
 class Schedule:
     """
     This class initializes an individual, calculate the ability of individual adaptation.
-    ### Parameter
-    `data`: `Data`, `optional`
-        The `Data` object contains a set of employees and shifts
     ### Method
     - `initialize`: randomly initialize a individual
     - `get_arrangement`: return a list of `Arrangement` objects that are just initialized
@@ -23,10 +23,11 @@ class Schedule:
     - `get_numbOfConflicts`: return the total conflicts
     - `get_fitness`: return the fitness of population, where there is no conflict, fitness is equal to 1
     """
-    def __init__(self, data=Data()) -> None:
-        self.data = data
+    def __init__(self) -> None:
+        self.shifts = SHIFTS
+        self.employees = EMPLOYEES
         self.arrangement = []
-        self.totalShifts = len(self.data.get_shifts())
+        self.totalShifts = len(SHIFTS)
         self.numbOfConflicts = 0
         self.conflicts = []
         self.fitness = -1
@@ -43,8 +44,8 @@ class Schedule:
         return self.fitness
 
     def initialize(self):
-        shifts = self.data.get_shifts()
-        employees = self.data.get_employees()
+        shifts = self.shifts
+        employees = self.employees
         for shift in shifts:
             assert isinstance(shift, Shift)
 
@@ -52,11 +53,6 @@ class Schedule:
             maxEmps = shift.get_maxEmp()
             newShift = Arrangement(shift)
             selectedEmployees = rnd.choices(employees, k=rnd.randint(minEmps, maxEmps))
-            # for employee in employees:
-            #     isSelected = rnd.getrandbits(1)
-            #     if isSelected == 1:
-            #         selectedEmployees.append(employee)
-            
             newShift.set_employeeList(selectedEmployees)
             self.arrangement.append(newShift)
         return self
@@ -83,15 +79,6 @@ class Schedule:
         numbOfShiftsWithManager = df_managers['shiftName'].nunique()
         self.conflicts.append(self.totalShifts - numbOfShiftsWithManager)
 
-        # check whether the number of employees is greater than or equal to the threshold (minimum of employees number)
-        # numbOfShiftsLackOfEmps = (
-        #     df
-        #     .groupby(['shiftName','minEmployees','maxEmployees'], as_index=False)
-        #     .agg(numbEmployees=('EmployeeCode','nunique'))
-        #     .query("numbEmployees < minEmployees or numbEmployees > maxEmployees").shape[0]
-        # )
-        # self.conflicts.append(numbOfShiftsLackOfEmps)
-
         # check whether each employee has exactly `NUMB_SHIFTS_PER_EMPLOYEE` shifts in month    
         numbOfEmpsNotExactShifts = (
             df
@@ -110,16 +97,14 @@ class Population:
     """
     This class generates a set of individuals in a population.
     ### Parameter
-    `data`: `Data`, `optional`
-        The `Data` object contains a set of employees and shifts
     `size`: `int`, `optional`, default `POPULATION_SIZE`
         The population size, the number of individuals
     ### Method
     - `get_schedules`: return a population of scheduled individuals
     """
-    def __init__(self, data=Data(), size=POPULATION_SIZE):
+    def __init__(self, size=POPULATION_SIZE):
         self.size = size
         self.schedules = []
         for _ in range(0, size):
-            self.schedules.append(Schedule(data).initialize())
+            self.schedules.append(Schedule().initialize())
     def get_schedules(self): return self.schedules

@@ -3,9 +3,13 @@ from prettytable import PrettyTable
 from data import Data, Employee, Shift, Arrangement
 from population import Population, Schedule
 
+DATA = Data()
+SHIFTS = DATA.get_shifts()
+EMPLOYEES = DATA.get_employees()
+
 class DisplayMgr:
     def __init__(self) -> None:
-        self.data = Data()
+        self.data = DATA
 
     def print_available_data(self):
         print('> All Available Data')
@@ -13,9 +17,8 @@ class DisplayMgr:
         self.print_shifts()
     
     def print_employees(self):
-        employees = self.data.get_employees()
         availableEmpTable = PrettyTable(['employeeCode', 'jobTitleName'])
-        for employee in employees:
+        for employee in EMPLOYEES:
             assert isinstance(employee, Employee)
             availableEmpTable.add_row([employee.get_code(), employee.get_title()])
         print('\n> Employees')
@@ -23,8 +26,7 @@ class DisplayMgr:
 
     def print_shifts(self):
         availableShiftTable = PrettyTable(['shiftName', 'minEmployees', 'maxEmployees'])
-        shifts = self.data.get_shifts()
-        for shift in shifts:
+        for shift in SHIFTS:
             assert isinstance(shift, Shift)
             availableShiftTable.add_row([shift.get_shift(), shift.get_minEmp(), shift.get_maxEmp()])
         print('\n> Shifts Info')
