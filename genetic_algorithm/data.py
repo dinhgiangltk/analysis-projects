@@ -31,11 +31,11 @@ for DATE in pd.date_range(START_DATE, END_DATE):
     day_name = DATE.day_name()
     for session in ["MOR","EVE"]:
         if session == "MOR":
-            minEmp = HALF_OF_EMPLOYEES
+            minEmp = HALF_OF_EMPLOYEES - 2
         else:
             # the evening is expected to attract more customers than the morning
             # therefore, it is expected to need more employees in the evening
-            minEmp = HALF_OF_EMPLOYEES + 1
+            minEmp = HALF_OF_EMPLOYEES - 1
         
         if day_name in ('Saturday','Sunday'):
             # the customers get more free time on the weekend
@@ -55,7 +55,7 @@ for DATE in pd.date_range(START_DATE, END_DATE):
         ])
 
 # define number of shifts each employee must join
-NUMB_SHIFTS_PER_EMPLOYEE = 22
+NUMB_SHIFTS_PER_EMPLOYEE = 23
 
 class Employee:
     """
@@ -113,20 +113,11 @@ class Arrangement:
     - `set_employeeList`: assign a list of employees to the work shift
     """
     def __init__(self, shift:Shift):
-        # self.id = id
         self.shift = shift
         self.employeeList = []
-    # def get_id(self): return self.id 
     def get_Shift(self): return self.shift
     def get_employeeList(self): return self.employeeList
     def set_employeeList(self, employeeList:list) -> None: self.employeeList = employeeList
-    # def __str__(self):
-    #     shift = self.get_shift()
-    #     shiftName = shift.get_shift()
-    #     employees = [[e.get_EmployeeCode() for e in el] for el in self.get_employeeList()]
-    #     zipped = [tup[0]+':'+str(tup[1]) for tup in zip(shiftName, employees)]
-    #     returnValue = ', '.join(zipped)
-    #     return returnValue
 
 class Data:
     """

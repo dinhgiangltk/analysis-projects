@@ -1,8 +1,8 @@
 from population import Population, Schedule
 import random as rnd
 
-NUMB_OF_ELITE_SCHEDULES = 2
-TOURNAMENT_SELECTION_SIZE = 3
+NUMB_OF_ELITE_SCHEDULES = 4
+TOURNAMENT_SELECTION_SIZE = 4
 CROSSOVER_RATE = 0.5
 MUTATION_RATE = 0.1
 
@@ -34,10 +34,10 @@ class GeneticAlgorithm:
         `elitism`: `optional`, default `NUMB_OF_ELITE_SCHEDULES`
             The number of elite individuals that are first selected
         """
-        population_size = pop.size
-        crossover_pop = Population(size=0)
-        for _ in range(elitism):
-            elite_schedule = pop.get_schedules()[0]
+        population_size = len(pop.get_schedules())
+        crossover_pop = Population(0)
+        for i in range(elitism):
+            elite_schedule = pop.get_schedules()[i]
             crossover_pop.get_schedules().append(elite_schedule)
 
         for _ in range(elitism, population_size):
@@ -45,7 +45,8 @@ class GeneticAlgorithm:
             schedule2 = self.select_tournament_population(pop).get_schedules()[0]
             crossover_schedule = self.crossover_schedule(schedule1, schedule2)
             crossover_pop.get_schedules().append(crossover_schedule)
-            
+        
+        crossover_pop.get_schedules().sort(key=lambda x: x.get_fitness(), reverse=True)
         return crossover_pop
     
     def mutate_population(self, pop:Population, elitism=NUMB_OF_ELITE_SCHEDULES):
@@ -56,9 +57,11 @@ class GeneticAlgorithm:
         `elitism`: `optional`, default `NUMB_OF_ELITE_SCHEDULES`
             The number of elite individuals that are first selected
         """
-        population_size = pop.size
+        population_size = len(pop.get_schedules())
         for i in range(elitism, population_size):
             self.mutate_schedule(pop.get_schedules()[i])
+        
+        pop.get_schedules().sort(key=lambda x: x.get_fitness(), reverse=True)
         return pop
     
     def select_tournament_population(self, pop:Population, size=TOURNAMENT_SELECTION_SIZE):

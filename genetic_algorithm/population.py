@@ -31,13 +31,14 @@ class Schedule:
         self.numbOfConflicts = 0
         self.numbOfConflicts1 = 0
         self.numbOfConflicts2 = 0
+        self.numbOfConflicts3 = 0
         self.fitness = -1
         self.isFitnessChanged = True
     def get_arrangement(self):
         self.isFitnessChanged = True
         return self.arrangement
     def get_numbOfConflicts(self): return self.numbOfConflicts
-    def get_conflicts(self): return [self.numbOfConflicts1, self.numbOfConflicts2]
+    def get_conflicts(self): return [self.numbOfConflicts1, self.numbOfConflicts2, self.numbOfConflicts3]
     def get_fitness(self):
         if self.isFitnessChanged == True:
             self.fitness = self.calculate_fitness()
@@ -88,9 +89,19 @@ class Schedule:
             .query(f"numbShifts < {NUMB_SHIFTS_PER_EMPLOYEE} or numbShifts > {DATES}").shape[0]
         )
         self.numbOfConflicts2 = numbOfEmpsNotExactShifts
+
+        # check whether the number of employees in each shift is in the range
+        numbOfShiftsNotEnoughEmps = (
+            df
+            .groupby(['shiftName','minEmployees','maxEmployees'], as_index=False)
+            .agg(Employees=('EmployeeCode','nunique'))
+            .query("~Employees.between(minEmployees,maxEmployees)")
+            .shape[0]
+        )
+        self.numbOfConflicts3 = numbOfShiftsNotEnoughEmps
         
         # sum of numbOfConflict components
-        self.numbOfConflicts = self.numbOfConflicts1 + self.numbOfConflicts2
+        self.numbOfConflicts = self.numbOfConflicts1 + self.numbOfConflicts2 + self.numbOfConflicts3
 
         return 1 / (self.get_numbOfConflicts() + 1)
 
@@ -104,7 +115,6 @@ class Population:
     - `get_schedules`: return a population of scheduled individuals
     """
     def __init__(self, size=POPULATION_SIZE):
-        self.size = size
         self.schedules = []
         for _ in range(0, size):
             self.schedules.append(Schedule().initialize())
